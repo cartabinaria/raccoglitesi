@@ -51,7 +51,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: build-result
-          path: site
+          path: .
 
   deploy:
     name: Deploy to Github Pages
@@ -67,7 +67,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: build-result
-          path: site
+          path: .
 
       - uses: JamesIves/github-pages-deploy-action@4.1.0
         with:

@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
       - run: npm ci
-      - run: npm index.js
+      - run: node index.js
       - name: Generate build artifact
         uses: actions/upload-artifact@v2
         with:

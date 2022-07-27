@@ -3,7 +3,7 @@ name: Deploy static content to Pages
 
 on:
   schedule:
-    - cron:  '0 0 1 * *'
+    - cron: "0 0 1 * *"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -28,15 +28,18 @@ jobs:
       - uses: actions/setup-node@v3
       - run: npm ci
       - run: npm index.js
+      - name: Generate build artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-result
+          path: site
 
   build:
     name: Generate a PDF file
     runs-on: ubuntu-latest
+    needs: generate
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-      - name: Generate a Markdown file from webpages
-        run: npm ci && npm index.js
+      - uses: actions/checkout@v1
       - name: Install format conversion tools
         run: |
           wget https://github.com/jgm/pandoc/releases/download/2.18/pandoc-2.18-linux-amd64.tar.gz -O /tmp/pandoc.tar.gz
@@ -51,22 +54,22 @@ jobs:
           path: site
 
   deploy:
-      name: Deploy to Github Pages
-      runs-on: ubuntu-latest
-      needs: build
-      if: github.ref == 'refs/heads/main'
-      steps:
-        - uses: actions/checkout@v1
-          with:
-            fetch-depth: 1
+    name: Deploy to Github Pages
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
 
-        - name: Download static site artifact
-          uses: actions/download-artifact@v2
-          with:
-            name: build-result
-            path: site
+      - name: Download static site artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: build-result
+          path: site
 
-        - uses: JamesIves/github-pages-deploy-action@4.1.0
-          with:
-            branch: gh-pages
-            folder: site
+      - uses: JamesIves/github-pages-deploy-action@4.1.0
+        with:
+          branch: gh-pages
+          folder: site

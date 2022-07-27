@@ -47,7 +47,7 @@ const LISTA_DOCENTI_URL =
   "https://{{dip}}.unibo.it/it/dipartimento/persone/docenti-e-ricercatori?pagenumber=1&pagesize=100000000&order=asc&sort=Cognome&";
 const TAB_TESI_SUFFIX = "/didattica?tab=tesi";
 const FILE_NAME = "tesi.md";
-const DIR_NAME = "tesi";
+const DIR_NAME = ".";
 
 function printWarn(str) {
   console.log(`[!] ${str}`);
@@ -174,7 +174,7 @@ function mostraListaDipartimenti(dipartimenti) {
   );
   for (let i = 0; i < dipartimenti.length; i++) {
     printLog(
-      `Nome :\n\t${dipartimenti[i].nome}"\n    Codice :\n\t${dipartimenti[i].codice}`
+      `Nome :\n\t${dipartimenti[i].nome}"\n    Codice :\n\t${dipartimenti[i].codice}\n${dipartimenti[i].url}`
     );
   }
 }
@@ -230,5 +230,10 @@ async function main() {
   }
 }
 
-main();
+// main();
 // test();
+scaricaPerDipartimento({
+  nome: "Informatica - Scienza e Ingegneria - DISI",
+  codice: "disi",
+  url: "https://disi.unibo.it/it",
+});

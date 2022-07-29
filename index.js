@@ -46,7 +46,6 @@ const DIPARTIMENTI_URL =
 const LISTA_DOCENTI_URL =
   "https://{{dip}}.unibo.it/it/dipartimento/persone/docenti-e-ricercatori?pagenumber=1&pagesize=100000000&order=asc&sort=Cognome&";
 const TAB_TESI_SUFFIX = "/didattica?tab=tesi";
-const FILE_NAME = "tesi.md";
 const DIR_NAME = "site";
 
 function printWarn(str) {
@@ -161,7 +160,7 @@ async function generateMarkDown(dip, docenti) {
 
 async function saveMarkDown(dip, md) {
   let d = path.join(__dirname, DIR_NAME),
-    p = path.join(d, `${dip.codice}_${FILE_NAME}`);
+    p = path.join(d, `${dip.codice}.md`);
   fs.mkdir(d, { recursive: true }, (err) => {
     if (err) throw err;
     fs.writeFileSync(p, md);

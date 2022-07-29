@@ -10,4 +10,4 @@ in automatico e quotidianamente. La versione più recente dell'elenco generato
 
 _Raccoglitesi_ nasce
 dall'[omonimo progetto](https://github.com/giammirove/raccoglitesi_unibo) di
-@giammirove.
+[@giammirove](https://github.com/giammirove).

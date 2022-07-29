@@ -33,6 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: generate
     steps:
+      - uses: actions/checkout@v1
       - name: Download MD file
         uses: actions/download-artifact@v2
         with:

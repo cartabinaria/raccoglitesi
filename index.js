@@ -156,7 +156,7 @@ async function generateMarkDown(dip, docenti) {
     }
     s += "\n";
   }
-  return s;
+  return s.replace(/[^\x00-\x7F]/g, "");
 }
 
 async function saveMarkDown(dip, md) {

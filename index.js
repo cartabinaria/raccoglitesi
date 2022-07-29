@@ -138,29 +138,44 @@ async function getDocenti(dip) {
   }
 }
 
-async function generateMarkDown(dip, docenti) {
-  let s = `# Tesi ${dip.nome}`;
+async function generateLatex(dip, docenti) {
+  let s = `\\documentclass[a4paper]{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[italian]{babel}
+\\usepackage[T1]{fontenc}
+\\usepackage{enumerate}
+\\usepackage{hyperref}
+\\title{Tesi ${dip.nome}}
+\\date{\\today}
+\\begin{document}
+\\maketitle
+\\tableofcontents
+`;
   for (let i = 0; i < docenti.length; i++) {
-    s += `\n\n## ${docenti[i].nome}\n\n${docenti[i].ruolo} | [_sito web_](${docenti[i].url})`;
+    s += `\\section{${docenti[i].nome}}\n${docenti[i].ruolo} | \\underline{\\href{${docenti[i].url}}{sito web}}\n`;
     for (let j = 0; j < docenti[i].tesi.length; j++) {
-      s += `\n\n**${docenti[i].tesi[j].nome}**`;
+      s += `\\subsection{${docenti[i].tesi[j].nome}}\n`;
       let tesi = docenti[i].tesi[j].tesi;
       for (let k = 0; k < tesi.length; k++) {
-        s += `\n\n_${tesi[k].titolo}_\n`;
+        s += `\\subsubsection{${tesi[k].titolo}}\n
+\\begin{itemize}\n`;
         for (let l = 0; l < tesi[k].tesi.length; l++) {
-          tesi[k].tesi[l] = tesi[k].tesi[l].replace(/\n/gm, "");
-          s += `\n    - ${tesi[k].tesi[l]}`;
+          tesi[k].tesi[l] = tesi[k].tesi[l]
+            .replace(/(<([^>]+)>|\n|&nbsp)/gi, " ")
+            .replace(/&amp;|&/gi, "\\&")
+            .replace(/#/gi, "\\#");
+          s += `  \\item ${tesi[k].tesi[l]}\n`;
         }
+        s += "\\end{itemize}\n";
       }
     }
-    s += "\n";
   }
-  return s.replace(/[^\x00-\x7F]/g, "");
+  return s.replace(/\s\s+/gi, " ") + "\\end{document}\n";
 }
 
-async function saveMarkDown(dip, md) {
+async function saveLatex(dip, md) {
   let d = path.join(__dirname, DIR_NAME),
-    p = path.join(d, `${dip.codice}.md`);
+    p = path.join(d, `${dip.codice}.tex`);
   fs.mkdir(d, { recursive: true }, (err) => {
     if (err) throw err;
     fs.writeFileSync(p, md);
@@ -183,9 +198,9 @@ async function scaricaPerDipartimento(dipartimento) {
   try {
     printLog(`Raccolgo docenti e tesi da\n\t\t${dipartimento.nome}`);
     let docenti = await getDocenti(dipartimento);
-    printLog("Genero il file markdown");
-    let md = await generateMarkDown(dipartimento, docenti);
-    let p = await saveMarkDown(dipartimento, md);
+    printLog("Genero il file LaTeX");
+    let md = await generateLatex(dipartimento, docenti);
+    let p = await saveLatex(dipartimento, md);
     printLog(`File generato in \n\t${p}`);
   } catch (e) {
     throw e;

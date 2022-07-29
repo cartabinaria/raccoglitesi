@@ -140,17 +140,17 @@ async function getDocenti(dip) {
 }
 
 async function generateMarkDown(dip, docenti) {
-  let s = `# Tesi ${dip.nome}\n`;
+  let s = `# Tesi ${dip.nome}`;
   for (let i = 0; i < docenti.length; i++) {
-    s += `## ${docenti[i].nome}\n${docenti[i].ruolo} | [_sito web_](${docenti[i].url})\n\n`;
+    s += `\n\n## ${docenti[i].nome}\n\n${docenti[i].ruolo} | [_sito web_](${docenti[i].url})`;
     for (let j = 0; j < docenti[i].tesi.length; j++) {
-      s += `**${docenti[i].tesi[j].nome}**\n\n`;
+      s += `\n\n**${docenti[i].tesi[j].nome}**`;
       let tesi = docenti[i].tesi[j].tesi;
       for (let k = 0; k < tesi.length; k++) {
-        s += `_${tesi[k].titolo}_\n\n`;
+        s += `\n\n_${tesi[k].titolo}_\n`;
         for (let l = 0; l < tesi[k].tesi.length; l++) {
           tesi[k].tesi[l] = tesi[k].tesi[l].replace(/\n/gm, "");
-          s += `- ${tesi[k].tesi[l]}\n`;
+          s += `\n- ${tesi[k].tesi[l]}`;
         }
       }
     }

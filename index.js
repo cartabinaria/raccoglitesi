@@ -150,7 +150,7 @@ async function generateMarkDown(dip, docenti) {
         s += `_${tesi[k].titolo}_\n\n`;
         for (let l = 0; l < tesi[k].tesi.length; l++) {
           tesi[k].tesi[l] = tesi[k].tesi[l].replace(/\n/gm, "");
-          s += `- ${tesi[k].tesi[l]}\n\n`;
+          s += `- ${tesi[k].tesi[l]}\n`;
         }
       }
     }

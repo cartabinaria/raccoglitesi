@@ -6,11 +6,6 @@ Dipartimento di Informatica - Scienza e Ingegneria. _Raccoglitesi_ si aggiorna
 in automatico e quotidianamente. La versione più recente dell'elenco generato
 è sempre consultabile [qui](https://csunibo.github.io/raccoglitesi/disi.pdf).
 
-push:
-branches:
-
-- main
-
 ## Riconoscimenti
 
 _Raccoglitesi_ nasce

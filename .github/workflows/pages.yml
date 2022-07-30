@@ -51,7 +51,7 @@ jobs:
       - name: Install tex
         run: |
           sudo apt update
-          sudo apt install texlive-xetex texlive-latex-extra texlive-lang-italian texlive-lang-english texlive-fonts-recommended texlive-bibtex-extra texlive-science latexmk pandoc
+          sudo apt install texlive-xetex texlive-latex-extra texlive-lang-italian texlive-lang-english texlive-fonts-recommended texlive-bibtex-extra texlive-science latexmk
       - name: Recursively compile tex files
         run: ./.github/workflows/rec "*\.tex$" "xelatex -pdf"
       - name: Generate build artifact

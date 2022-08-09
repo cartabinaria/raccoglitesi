@@ -161,9 +161,13 @@ async function generateLatex(dip, docenti) {
 \\begin{itemize}\n`;
         for (let l = 0; l < tesi[k].tesi.length; l++) {
           tesi[k].tesi[l] = tesi[k].tesi[l]
-            .replace(/(<([^>]+)>|\n|&nbsp)/gi, " ")
-            .replace(/&amp;|&/gi, "\\&")
-            .replace(/#/gi, "\\#");
+            .replace(
+              /<a href="(.+?)"(?:.*?)>(.+?)<\/a>/gi,
+              "\\underline{\\href{$1}{$2}}"
+            ) // links
+            .replace(/(<([^>]+)>|\n|&nbsp;)/gi, " ") // strip remaining tags
+            .replace(/&amp;|&/gi, "\\&") // &
+            .replace(/#/gi, "\\#"); // #
           s += `  \\item ${tesi[k].tesi[l]}\n`;
         }
         s += "\\end{itemize}\n";

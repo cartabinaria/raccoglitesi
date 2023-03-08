@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 
 	"github.com/gocolly/colly"
@@ -21,13 +22,13 @@ type Dipartimento struct {
 	code string
 }
 
-// descrive tutte le sezioni di tesi per un singolo professore
+// descrive una sezione di tesi per un singolo professore
 type AllTesi struct {
 	titoloSezione string
 	tesi          []Tesi
 }
 
-// descrive una singola sezione di tesi
+// descrive una sotto sezione di tesi
 type Tesi struct {
 	titoloSezione string
 	nomeTesi      []string
@@ -37,7 +38,7 @@ type Docente struct {
 	nome  string
 	ruolo string
 	url   string
-	tesi  []Tesi
+	tesi  []AllTesi
 }
 
 func printWarning(str string) {
@@ -163,7 +164,7 @@ func getDocenti(codiceDipartimento string) []Docente {
 				nome:  nome,
 				ruolo: ruolo,
 				url:   url,
-				tesi:  nil, // TODO tesi: getTesi(url),
+				tesi:  getTesi(url),
 			}
 			docenti = append(docenti, docente)
 		})
@@ -172,6 +173,57 @@ func getDocenti(codiceDipartimento string) []Docente {
 	collector.Visit(requestUrl)
 
 	return docenti
+}
+
+func generateLatex(dip Dipartimento, docenti []Docente) string {
+	formatStr := fmt.Sprintf(`\\documentclass[a4paper]{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[italian]{babel}
+\\usepackage[T1]{fontenc}
+\\usepackage{enumerate}
+\\usepackage{hyperref}
+\\title{Tesi %s}
+\\date{\\today}
+\\begin{document}
+\\maketitle
+\\tableofcontents
+	`, dip.nome)
+
+	for _, docente := range docenti {
+		formatStr += fmt.Sprintf("\\section{%s}\n%s | \\underline{\\href{%s}{sito web}}\n", docente.nome, docente.ruolo, docente.url)
+		for _, sezioneTesi := range docente.tesi {
+			formatStr += fmt.Sprintf("\\subsection{%s}\n", sezioneTesi.titoloSezione)
+			sottoSezioniTesi := sezioneTesi.tesi
+			for _, sottoSezioneTesi := range sottoSezioniTesi {
+				formatStr += fmt.Sprintf("\\subsubsection{%s}\n\\begin{itemize}\n", sottoSezioneTesi.titoloSezione)
+				for _, tesi := range sottoSezioneTesi.nomeTesi {
+					nuovoNome := regexp.MustCompile(`/<a href="(.+?)"(?:.*?)>(.+?)<\/a>/gi`).ReplaceAllString(tesi, "\\underline{\\href{$1}{$2}}")
+					nuovoNome = regexp.MustCompile(`/(<([^>]+)>|\n|&nbsp;)/gi`).ReplaceAllString(nuovoNome, " ")
+					nuovoNome = regexp.MustCompile(`/&amp;|&/gi`).ReplaceAllString(nuovoNome, "\\&")
+					nuovoNome = regexp.MustCompile(`/#/gi`).ReplaceAllString(nuovoNome, "\\#")
+					formatStr += fmt.Sprintf("\\item %s\n", nuovoNome)
+				}
+				formatStr += "\\end{itemize}\n"
+			}
+		}
+	}
+
+	formatStr = regexp.MustCompile(`/\s\s+/gi`).ReplaceAllString(formatStr, " ")
+	formatStr += "\\end{document}"
+	return formatStr
+}
+
+func saveLatex(dip Dipartimento, latex string) {
+	file, err := os.Create(fmt.Sprintf("%s.tex", dip.code))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(latex)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {

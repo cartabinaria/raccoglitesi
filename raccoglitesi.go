@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"regexp"
 
 	"github.com/gocolly/colly"
@@ -213,8 +214,9 @@ func generateLatex(dip Dipartimento, docenti []Docente) string {
 	return formatStr
 }
 
-func saveLatex(dip Dipartimento, latex string) {
-	file, err := os.Create(fmt.Sprintf("%s.tex", dip.code))
+func saveLatex(dip Dipartimento, latex string) string {
+	endPath := path.Join(DIR_NAME, fmt.Sprintf("%s.tex", dip.code))
+	file, err := os.Create(endPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -224,9 +226,55 @@ func saveLatex(dip Dipartimento, latex string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	return endPath
+}
+
+func mostraListaDipartimenti(dipartimenti []Dipartimento) {
+	printInfo(
+		"Questa e' la lista dei dipartimenti da cui pui scegliere!\n    Inserire il campo `Codice`!")
+
+	for _, dipartimento := range dipartimenti {
+		printInfo(fmt.Sprintf("Codice: %s - Nome: %s", dipartimento.code, dipartimento.nome))
+	}
+}
+
+func scaricaPerDipartimento(dip Dipartimento) {
+	log.Println("Sto scaricando le tesi per il dipartimento", dip.nome)
+	docenti := getDocenti(dip.code)
+
+	log.Println("Sto generando il file latex")
+	latex := generateLatex(dip, docenti)
+	path := saveLatex(dip, latex)
+	log.Println("Ho salvato il file in", path)
+}
+
+func test() {
+	dipartimenti := getDipartimenti()
+	for _, dipartimento := range dipartimenti {
+		scaricaPerDipartimento(dipartimento)
+	}
 }
 
 func main() {
-	getTesi("https://www.unibo.it/sitoweb/alessandro.bevilacqua")
+	fmt.Println("Per info sulle sigle guardare qua -> \n\thttps://www.unibo.it/it/ateneo/sedi-e-strutture/dipartimenti")
+	fmt.Println("Guardare il dominio del dipartimanto non il codice\n\tEsempio.\n\t\tDIFA -> fisica-astronomia\n\t\tCHIMIND -> chimica-industriale")
+	log.Println("Raccolgo tutti i dipartimenti")
+	dipartimenti := getDipartimenti()
 
+	var input string
+	fmt.Scanln(&input)
+	index := -1
+	for i, dipartimento := range dipartimenti {
+		if dipartimento.code == input {
+			index = i
+		}
+	}
+
+	if index == -1 {
+		mostraListaDipartimenti(dipartimenti)
+		log.Fatal("Il dipartimento non esiste, immettere codice valido")
+	}
+
+	scaricaPerDipartimento(dipartimenti[index])
 }

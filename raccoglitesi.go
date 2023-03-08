@@ -21,9 +21,16 @@ type Dipartimento struct {
 	code string
 }
 
+// descrive tutte le sezioni di tesi per un singolo professore
+type AllTesi struct {
+	titoloSezione string
+	tesi          []Tesi
+}
+
+// descrive una singola sezione di tesi
 type Tesi struct {
-	titolo    string
-	contenuto []string
+	titoloSezione string
+	nomeTesi      []string
 }
 
 type Docente struct {
@@ -85,9 +92,50 @@ func getDipartimenti() []Dipartimento {
 	return dipartimenti
 }
 
-func getTesi(docenteURL string) {
-	// TODO: Implementare
-	panic("getTesi not implemented")
+func getTesi(docenteURL string) []AllTesi {
+	collector := colly.NewCollector()
+	collector.OnRequest(collyVisit)
+	collector.OnError(collyError)
+
+	tesiProposte := make([]Tesi, 0)
+	tesiAssegnate := make([]Tesi, 0, 10)
+
+	collector.OnHTML(".inner-text", func(el *colly.HTMLElement) {
+		// NOTA: qui so che per forza o è uno o è 0, non c'è molto da dire...
+		// ha senso tenere l'array?? boh, bisognerebbe decidere
+		text := el.Text
+		if text != "" {
+			tesiProposte = append(tesiProposte, Tesi{
+				titoloSezione: "Tutte",
+				nomeTesi:      []string{text},
+			})
+		}
+	})
+
+	collector.OnHTML(".report-list", func(el *colly.HTMLElement) {
+		titolo := el.DOM.Find("h4").Text()
+		tesi := Tesi{
+			titoloSezione: titolo,
+			nomeTesi:      make([]string, 0),
+		}
+		el.ForEach("li", func(i int, item *colly.HTMLElement) {
+			tesi.nomeTesi = append(tesi.nomeTesi, item.Text)
+		})
+		tesiAssegnate = append(tesiAssegnate, tesi)
+	})
+
+	collector.Visit(getTesiURL(docenteURL))
+
+	return []AllTesi{
+		{
+			titoloSezione: "Tesi proposte",
+			tesi:          tesiProposte,
+		},
+		{
+			titoloSezione: "Tesi assegnate",
+			tesi:          tesiAssegnate,
+		},
+	}
 }
 
 func getDocenti(codiceDipartimento string) []Docente {
@@ -127,7 +175,6 @@ func getDocenti(codiceDipartimento string) []Docente {
 }
 
 func main() {
-	docente := getDocenti("disi")
-	fmt.Println(docente)
+	getTesi("https://www.unibo.it/sitoweb/alessandro.bevilacqua")
 
 }

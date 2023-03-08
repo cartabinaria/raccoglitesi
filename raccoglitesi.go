@@ -27,9 +27,9 @@ type Tesi struct {
 }
 
 type Docente struct {
-	url   string
 	nome  string
 	ruolo string
+	url   string
 	tesi  []Tesi
 }
 
@@ -90,24 +90,44 @@ func getTesi(docenteURL string) {
 	panic("getTesi not implemented")
 }
 
-func getDocenti(codiceDipartimento string) {
-
-}
-
-func main() {
+func getDocenti(codiceDipartimento string) []Docente {
 	collector := colly.NewCollector()
 	collector.OnRequest(collyVisit)
 	collector.OnError(collyError)
 
-	requestUrl := fmt.Sprintf(LISTA_DOCENTI_URL, "disi")
+	requestUrl := fmt.Sprintf(LISTA_DOCENTI_URL, codiceDipartimento)
 
+	docenti := make([]Docente, 0, 100)
 	collector.OnHTML("div[class=picture-cards]", func(firstContainer *colly.HTMLElement) {
+		log.Println(firstContainer.DOM.Html())
 		firstContainer.ForEach("div[class=item]", func(_ int, item *colly.HTMLElement) {
-			link := item.DOM.Find("a").Nodes[0]
-			// TODO: capire come prendere laprima istanza di a
-			log.Println(len(link))
+			// in questo blocco HTML ci sono le informazioni interessanti sul docente
+			infoBlock := item.DOM.Find("div[class=text-wrap]")
+			link := infoBlock.Find("a").First()
+			url, exists := link.Attr("href")
+			nome := link.Text()
+			ruolo := infoBlock.Find("p").First().Text()
+			if !exists {
+				log.Fatal("La pagina dei docenti è probabilmente cambiata, non posso prendere trovare il link alla sua pagina")
+			}
+
+			docente := Docente{
+				nome:  nome,
+				ruolo: ruolo,
+				url:   url,
+				tesi:  nil, // TODO tesi: getTesi(url),
+			}
+			docenti = append(docenti, docente)
 		})
 	})
 
 	collector.Visit(requestUrl)
+
+	return docenti
+}
+
+func main() {
+	docente := getDocenti("disi")
+	fmt.Println(docente)
+
 }

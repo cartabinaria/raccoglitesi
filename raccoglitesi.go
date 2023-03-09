@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strings"
 
 	"github.com/gocolly/colly"
 )
@@ -105,7 +106,7 @@ func getTesi(docenteURL string) []AllTesi {
 	collector.OnHTML(".inner-text", func(el *colly.HTMLElement) {
 		// NOTA: qui so che per forza o è uno o è 0, non c'è molto da dire...
 		// ha senso tenere l'array?? boh, bisognerebbe decidere
-		text := el.Text
+		text := strings.TrimSpace(el.Text)
 		if text != "" {
 			tesiProposte = append(tesiProposte, Tesi{
 				titoloSezione: "Tutte",
@@ -149,13 +150,12 @@ func getDocenti(codiceDipartimento string) []Docente {
 
 	docenti := make([]Docente, 0, 100)
 	collector.OnHTML("div[class=picture-cards]", func(firstContainer *colly.HTMLElement) {
-		log.Println(firstContainer.DOM.Html())
 		firstContainer.ForEach("div[class=item]", func(_ int, item *colly.HTMLElement) {
 			// in questo blocco HTML ci sono le informazioni interessanti sul docente
 			infoBlock := item.DOM.Find("div[class=text-wrap]")
 			link := infoBlock.Find("a").First()
 			url, exists := link.Attr("href")
-			nome := link.Text()
+			nome := strings.TrimSpace(link.Text())
 			ruolo := infoBlock.Find("p").First().Text()
 			if !exists {
 				log.Fatal("La pagina dei docenti è probabilmente cambiata, non posso prendere trovare il link alla sua pagina")
@@ -177,18 +177,18 @@ func getDocenti(codiceDipartimento string) []Docente {
 }
 
 func generateLatex(dip Dipartimento, docenti []Docente) string {
-	formatStr := fmt.Sprintf(`\\documentclass[a4paper]{article}
-\\usepackage[utf8]{inputenc}
-\\usepackage[italian]{babel}
-\\usepackage[T1]{fontenc}
-\\usepackage{enumerate}
-\\usepackage{hyperref}
-\\title{Tesi %s}
-\\date{\\today}
-\\begin{document}
-\\maketitle
-\\tableofcontents
-	`, dip.nome)
+	formatStr := fmt.Sprintf(`\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{enumerate}
+\usepackage{hyperref}
+\title{Tesi %s}
+\date{\today}
+\begin{document}
+\maketitle
+\tableofcontents
+`, dip.nome)
 
 	for _, docente := range docenti {
 		formatStr += fmt.Sprintf("\\section{%s}\n%s | \\underline{\\href{%s}{sito web}}\n", docente.nome, docente.ruolo, docente.url)
@@ -216,6 +216,7 @@ func generateLatex(dip Dipartimento, docenti []Docente) string {
 
 func saveLatex(dip Dipartimento, latex string) string {
 	endPath := path.Join(DIR_NAME, fmt.Sprintf("%s.tex", dip.code))
+	os.MkdirAll(DIR_NAME, os.ModePerm)
 	file, err := os.Create(endPath)
 	if err != nil {
 		log.Fatal(err)
@@ -258,10 +259,11 @@ func test() {
 
 func main() {
 	fmt.Println("Per info sulle sigle guardare qua -> \n\thttps://www.unibo.it/it/ateneo/sedi-e-strutture/dipartimenti")
-	fmt.Println("Guardare il dominio del dipartimanto non il codice\n\tEsempio.\n\t\tDIFA -> fisica-astronomia\n\t\tCHIMIND -> chimica-industriale")
+	fmt.Println("Guardare il dominio del dipartimento non il codice\n\tEsempio.\n\t\tDIFA -> fisica-astronomia\n\t\tCHIMIND -> chimica-industriale")
 	log.Println("Raccolgo tutti i dipartimenti")
 	dipartimenti := getDipartimenti()
 
+	fmt.Println("[?] Sigla dipartimento: ")
 	var input string
 	fmt.Scanln(&input)
 	index := -1

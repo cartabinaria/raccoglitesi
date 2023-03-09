@@ -51,18 +51,6 @@ type Docente struct {
 	tesi  []AllTesi
 }
 
-func printWarning(str string) {
-	log.Println("[WARNING]: " + str)
-}
-
-func printError(str string) {
-	log.Println("[ERROR]: " + str)
-}
-
-func printInfo(str string) {
-	log.Println("[INFO]: " + str)
-}
-
 func getTesiURL(baseURL string) string {
 	return baseURL + TAB_TESI_SUFFIX
 }
@@ -242,11 +230,11 @@ func saveLatex(dip Dipartimento, latex string) string {
 }
 
 func mostraListaDipartimenti(dipartimenti []Dipartimento) {
-	printInfo(
+	log.Println(
 		"Questa e' la lista dei dipartimenti da cui pui scegliere!\n    Inserire il campo `Codice`!")
 
 	for _, dipartimento := range dipartimenti {
-		printInfo(fmt.Sprintf("Codice: %s - Nome: %s", dipartimento.code, dipartimento.nome))
+		log.Printf("Codice: %s - Nome: %s\n", dipartimento.code, dipartimento.nome)
 	}
 }
 

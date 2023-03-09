@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/anaseto/gofrundis/escape"
 	"github.com/gocolly/colly"
 )
 
@@ -80,6 +81,7 @@ func getDipartimenti() []Dipartimento {
 	collector := colly.NewCollector()
 	collector.OnRequest(collyVisit)
 	collector.OnError(collyError)
+	collector.SetRequestTimeout(10e11)
 
 	dipartimenti := make([]Dipartimento, 0, 40)
 	collector.OnHTML("div[class=description-text]", func(firstContainer *colly.HTMLElement) {
@@ -208,9 +210,8 @@ func generateLatex(dip Dipartimento, docenti []Docente) string {
 				formatStr += fmt.Sprintf("\\subsubsection{%s}\n\\begin{itemize}\n", sottoSezioneTesi.titoloSezione)
 				for _, tesi := range sottoSezioneTesi.nomeTesi {
 					nuovoNome := regexp.MustCompile(`/<a href="(.+?)"(?:.*?)>(.+?)<\/a>/gi`).ReplaceAllString(tesi, "\\underline{\\href{$1}{$2}}")
-					nuovoNome = regexp.MustCompile(`/(<([^>]+)>|\n|&nbsp;)/gi`).ReplaceAllString(nuovoNome, " ")
-					nuovoNome = regexp.MustCompile(`/&amp;|&/gi`).ReplaceAllString(nuovoNome, "\\&")
-					nuovoNome = regexp.MustCompile(`/#/gi`).ReplaceAllString(nuovoNome, "\\#")
+					nuovoNome = regexp.MustCompile(`/\&amp;/gi`).ReplaceAllString(nuovoNome, "&")
+					nuovoNome = escape.LaTeX(nuovoNome)
 					formatStr += fmt.Sprintf("\\item %s\n", nuovoNome)
 				}
 				formatStr += "\\end{itemize}\n"

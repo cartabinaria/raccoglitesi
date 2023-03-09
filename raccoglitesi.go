@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -15,7 +16,13 @@ const (
 	DIPARTIMENTI_URL  = "https://www.unibo.it/it/ateneo/sedi-e-strutture/dipartimenti"
 	LISTA_DOCENTI_URL = "https://%s.unibo.it/it/dipartimento/persone/docenti-e-ricercatori?pagenumber=1&pagesize=100000000&order=asc&sort=Cognome&"
 	TAB_TESI_SUFFIX   = "/didattica?tab=tesi"
-	DIR_NAME          = "site"
+)
+
+var (
+	help    = flag.Bool("h", false, "Show this help")
+	dirName = flag.String("od", "site", "Output Directory name")
+	dipCode = flag.String("dipcode", "", "Dipartimento code e.g. disi, difa, etc...")
+	quiet   = flag.Bool("q", false, "Quiet mode, non mostrare i log di visita")
 )
 
 type Dipartimento struct {
@@ -60,7 +67,9 @@ func getTesiURL(baseURL string) string {
 }
 
 func collyVisit(r *colly.Request) {
-	log.Println("Visiting", r.URL.String())
+	if !*quiet {
+		log.Println("Visiting", r.URL.String())
+	}
 }
 
 func collyError(r *colly.Response, err error) {
@@ -215,8 +224,8 @@ func generateLatex(dip Dipartimento, docenti []Docente) string {
 }
 
 func saveLatex(dip Dipartimento, latex string) string {
-	endPath := path.Join(DIR_NAME, fmt.Sprintf("%s.tex", dip.code))
-	os.MkdirAll(DIR_NAME, os.ModePerm)
+	endPath := path.Join(*dirName, fmt.Sprintf("%s.tex", dip.code))
+	os.MkdirAll(*dirName, os.ModePerm)
 	file, err := os.Create(endPath)
 	if err != nil {
 		log.Fatal(err)
@@ -258,24 +267,29 @@ func test() {
 }
 
 func main() {
-	fmt.Println("Per info sulle sigle guardare qua -> \n\thttps://www.unibo.it/it/ateneo/sedi-e-strutture/dipartimenti")
-	fmt.Println("Guardare il dominio del dipartimento non il codice\n\tEsempio.\n\t\tDIFA -> fisica-astronomia\n\t\tCHIMIND -> chimica-industriale")
-	log.Println("Raccolgo tutti i dipartimenti")
+	flag.Parse()
+
+	if *help {
+		fmt.Println("Per info sulle sigle guardare qua -> \n\thttps://www.unibo.it/it/ateneo/sedi-e-strutture/dipartimenti")
+		fmt.Println("Guardare il dominio del dipartimento non il codice\n\tEsempio.\n\t\tDIFA -> fisica-astronomia\n\t\tCHIMIND -> chimica-industriale")
+		fmt.Println("Raccolgo tutti i dipartimenti")
+		flag.Usage()
+		os.Exit(0)
+	}
+
 	dipartimenti := getDipartimenti()
 
-	fmt.Println("[?] Sigla dipartimento: ")
-	var input string
-	fmt.Scanln(&input)
 	index := -1
 	for i, dipartimento := range dipartimenti {
-		if dipartimento.code == input {
+		if dipartimento.code == *dipCode {
 			index = i
 		}
 	}
 
 	if index == -1 {
+		fmt.Println("Il dipartimento non esiste, immettere codice valido")
 		mostraListaDipartimenti(dipartimenti)
-		log.Fatal("Il dipartimento non esiste, immettere codice valido")
+		os.Exit(1)
 	}
 
 	scaricaPerDipartimento(dipartimenti[index])

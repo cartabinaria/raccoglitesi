@@ -173,7 +173,7 @@ func generateOutput(dip Dipartimento, docenti []Docente) string {
 	output := fmt.Sprintf("= Tesi %s\n:toc:\n", dip.nome)
 
 	for _, docente := range docenti {
-		output += fmt.Sprintf("\n== %s\n%s | %s[sito web]", docente.nome, docente.ruolo, docente.url)
+		output += fmt.Sprintf("\n== %s\n%s | %s[sito web]\n", docente.nome, docente.ruolo, docente.url)
 
 		for _, sezioneTesi := range docente.tesi {
 			output += fmt.Sprintf("\n=== %s\n", sezioneTesi.titolo)

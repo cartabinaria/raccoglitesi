@@ -59,7 +59,7 @@ jobs:
           path: site
 
       - name: Compile asciidoc files to HTML
-        run: asciidoctor "*\.adoc"
+        run: asciidoctor "site/*.adoc"
 
       - name: Generate build artifact
         uses: actions/upload-artifact@v2

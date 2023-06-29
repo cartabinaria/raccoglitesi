@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   generate:
-    name: Webpage to LaTeX
+    name: Generate source
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -37,53 +37,60 @@ jobs:
       - name: Generate build artifact
         uses: actions/upload-artifact@v2
         with:
-          name: tex
+          name: site-source
           path: site
 
   build:
-    name: LaTeX to PDF
+    name: Asciidoc to HTML
     runs-on: ubuntu-latest
     needs: generate
     steps:
-      - uses: actions/checkout@v1
-      - name: Download tex file
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+
+      - run: gem install asciidoctor
+
+      - name: Download site
         uses: actions/download-artifact@v2
         with:
-          name: tex
+          name: site-source
           path: site
-      - name: Install tex
-        run: |
-          sudo apt update
-          sudo apt install texlive-xetex texlive-latex-extra texlive-lang-italian texlive-lang-english texlive-fonts-recommended texlive-bibtex-extra texlive-science latexmk
-      - name: Recursively compile tex files
-        run: ./.github/workflows/rec "*\.tex$" "xelatex -pdf"
+
+      - name: Compile asciidoc files to HTML
+        run: asciidoctor "*\.adoc"
+
       - name: Generate build artifact
         uses: actions/upload-artifact@v2
         with:
-          name: pdf
+          name: site
           path: site
 
   deploy:
-    name: PDF to GitHub Pages
+    name: Deploy to GitHub Pages
     environment:
       name: github-pages
       url: https://csunibo.github.io/raccoglitesi/disi.pdf
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Download PDF file
+      - uses: actions/checkout@v3
+
+      - name: Download site
         uses: actions/download-artifact@v2
         with:
-          name: pdf
+          name: site
           path: site
+
       - name: Setup Pages
         uses: actions/configure-pages@v1
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
           path: site
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@main

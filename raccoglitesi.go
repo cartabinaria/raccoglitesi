@@ -33,22 +33,16 @@ type Dipartimento struct {
 }
 
 // descrive una sezione di tesi per un singolo professore
-type AllTesi struct {
-	titoloSezione string
-	tesi          []Tesi
-}
-
-// descrive una sotto sezione di tesi
-type Tesi struct {
-	titoloSezione string
-	nomeTesi      []string
+type Sezione[Contenuto any] struct {
+	titolo   string
+	elementi []Contenuto
 }
 
 type Docente struct {
 	nome  string
 	ruolo string
 	url   string
-	tesi  []AllTesi
+	tesi  []Sezione[Sezione[string]]
 }
 
 func getTesiURL(baseURL string) string {
@@ -62,7 +56,7 @@ func collyVisit(r *colly.Request) {
 }
 
 func collyError(r *colly.Response, err error) {
-	log.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+	log.Println("Request URL:", r.Request.URL, "failed with response:", r.StatusCode, "\nError:", err)
 }
 
 func getDipartimenti() []Dipartimento {
@@ -94,48 +88,48 @@ func getDipartimenti() []Dipartimento {
 	return dipartimenti
 }
 
-func getTesi(docenteURL string) []AllTesi {
+func getTesi(docenteURL string) []Sezione[Sezione[string]] {
 	collector := colly.NewCollector()
 	collector.OnRequest(collyVisit)
 	collector.OnError(collyError)
 
-	tesiProposte := make([]Tesi, 0)
-	tesiAssegnate := make([]Tesi, 0, 10)
+	tesiProposte := make([]Sezione[string], 0)
+	tesiAssegnate := make([]Sezione[string], 0, 10)
 
 	collector.OnHTML(".inner-text", func(el *colly.HTMLElement) {
 		// NOTA: qui so che per forza o è uno o è 0, non c'è molto da dire...
 		// ha senso tenere l'array?? boh, bisognerebbe decidere
 		text := strings.TrimSpace(el.Text)
 		if text != "" {
-			tesiProposte = append(tesiProposte, Tesi{
-				titoloSezione: "Tutte",
-				nomeTesi:      []string{text},
+			tesiProposte = append(tesiProposte, Sezione[string]{
+				titolo:   "Tutte",
+				elementi: []string{text},
 			})
 		}
 	})
 
 	collector.OnHTML(".report-list", func(el *colly.HTMLElement) {
 		titolo := el.DOM.Find("h4").Text()
-		tesi := Tesi{
-			titoloSezione: titolo,
-			nomeTesi:      make([]string, 0),
+		tesi := Sezione[string]{
+			titolo:   titolo,
+			elementi: make([]string, 0),
 		}
 		el.ForEach("li", func(i int, item *colly.HTMLElement) {
-			tesi.nomeTesi = append(tesi.nomeTesi, item.Text)
+			tesi.elementi = append(tesi.elementi, item.Text)
 		})
 		tesiAssegnate = append(tesiAssegnate, tesi)
 	})
 
 	collector.Visit(getTesiURL(docenteURL))
 
-	return []AllTesi{
+	return []Sezione[Sezione[string]]{
 		{
-			titoloSezione: "Tesi proposte",
-			tesi:          tesiProposte,
+			titolo:   "Tesi proposte",
+			elementi: tesiProposte,
 		},
 		{
-			titoloSezione: "Tesi assegnate",
-			tesi:          tesiAssegnate,
+			titolo:   "Tesi assegnate",
+			elementi: tesiAssegnate,
 		},
 	}
 }
@@ -175,58 +169,49 @@ func getDocenti(codiceDipartimento string) []Docente {
 	return docenti
 }
 
-func generateLatex(dip Dipartimento, docenti []Docente) string {
-	formatStr := fmt.Sprintf(`\documentclass[a4paper]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[italian]{babel}
-\usepackage[T1]{fontenc}
-\usepackage{enumerate}
-\usepackage{hyperref}
-\title{Tesi %s}
-\date{\today}
-\begin{document}
-\maketitle
-\tableofcontents
-`, dip.nome)
+func generateOutput(dip Dipartimento, docenti []Docente) string {
+	output := fmt.Sprintf("= Tesi %s\n:toc:\n", dip.nome)
 
 	for _, docente := range docenti {
-		formatStr += fmt.Sprintf("\\section{%s}\n%s | \\underline{\\href{%s}{sito web}}\n", docente.nome, docente.ruolo, docente.url)
+		output += fmt.Sprintf("\n== %s\n%s | %s[sito web]", docente.nome, docente.ruolo, docente.url)
+
 		for _, sezioneTesi := range docente.tesi {
-			formatStr += fmt.Sprintf("\\subsection{%s}\n", sezioneTesi.titoloSezione)
-			sottoSezioniTesi := sezioneTesi.tesi
-			for _, sottoSezioneTesi := range sottoSezioniTesi {
-				formatStr += fmt.Sprintf("\\subsubsection{%s}\n\\begin{itemize}\n", sottoSezioneTesi.titoloSezione)
-				for _, tesi := range sottoSezioneTesi.nomeTesi {
-					nuovoNome := regexp.MustCompile(`/<a href="(.+?)"(?:.*?)>(.+?)<\/a>/gi`).ReplaceAllString(tesi, "\\underline{\\href{$1}{$2}}")
-					nuovoNome = regexp.MustCompile(`/\&amp;/gi`).ReplaceAllString(nuovoNome, "&")
-					nuovoNome = escape.LaTeX(nuovoNome)
-					formatStr += fmt.Sprintf("\\item %s\n", nuovoNome)
+			output += fmt.Sprintf("\n=== %s\n", sezioneTesi.titolo)
+
+			for _, sottoSezioneTesi := range sezioneTesi.elementi {
+				output += fmt.Sprintf("\n==== %s\n", sottoSezioneTesi.titolo)
+
+				for _, nome := range sottoSezioneTesi.elementi {
+					nome = escape.Markdown(nome)
+					output += fmt.Sprintf("* %s\n", nome)
 				}
-				formatStr += "\\end{itemize}\n"
+
 			}
 		}
 	}
 
-	formatStr = regexp.MustCompile(`/\s\s+/gi`).ReplaceAllString(formatStr, " ")
-	formatStr += "\\end{document}"
-	return formatStr
+	output = regexp.MustCompile(`/\s\s+/gi`).ReplaceAllString(output, " ")
+	return output
 }
 
-func saveLatex(dip Dipartimento, latex string) string {
-	endPath := path.Join(*dirName, fmt.Sprintf("%s.tex", dip.code))
+func saveOutput(dip Dipartimento, output string) string {
+	fileName := fmt.Sprintf("%s.adoc", dip.code)
+	filePath := path.Join(*dirName, fileName)
+
 	os.MkdirAll(*dirName, os.ModePerm)
-	file, err := os.Create(endPath)
-	if err != nil {
-		log.Fatal(err)
-	}
+
+	file, err := os.Create(filePath)
 	defer file.Close()
-
-	_, err = file.WriteString(latex)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return endPath
+	_, err = file.WriteString(output)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return filePath
 }
 
 func mostraListaDipartimenti(dipartimenti []Dipartimento) {
@@ -242,9 +227,9 @@ func scaricaPerDipartimento(dip Dipartimento) {
 	log.Println("Sto scaricando le tesi per il dipartimento", dip.nome)
 	docenti := getDocenti(dip.code)
 
-	log.Println("Sto generando il file latex")
-	latex := generateLatex(dip, docenti)
-	path := saveLatex(dip, latex)
+	log.Println("Sto generando il file output")
+	output := generateOutput(dip, docenti)
+	path := saveOutput(dip, output)
 	log.Println("Ho salvato il file in", path)
 }
 

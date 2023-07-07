@@ -50,7 +50,7 @@ jobs:
           ruby-version: '3.0'
           bundler-cache: true # runs 'bundle install' and caches installed gems automatically
 
-      - run: gem install asciidoctor
+      - run: gem install asciidoctor asciidoctor-pdf
 
       - name: Download site
         uses: actions/download-artifact@v2
@@ -60,6 +60,9 @@ jobs:
 
       - name: Compile asciidoc files to HTML
         run: asciidoctor "site/*.adoc"
+
+      - name: Compile asciidoc files to PDF
+        run: asciidoctor-pdf "site/*.adoc"
 
       - name: Generate build artifact
         uses: actions/upload-artifact@v2

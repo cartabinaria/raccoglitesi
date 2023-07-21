@@ -1,4 +1,4 @@
-module raccoglitesi
+module github.com/csunibo/raccoglitesi
 
 go 1.20
 

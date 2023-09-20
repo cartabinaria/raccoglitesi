@@ -228,8 +228,8 @@ func scaricaPerDipartimento(dip Dipartimento) {
 
 	log.Println("Sto generando il file output")
 	output := generateOutput(dip, docenti)
-	path := saveOutput(dip, output)
-	log.Println("Ho salvato il file in", path)
+	filePath := saveOutput(dip, output)
+	log.Println("Ho salvato il file in", filePath)
 }
 
 func test() {

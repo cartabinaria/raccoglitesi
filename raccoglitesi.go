@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/anaseto/gofrundis/escape"
 	"github.com/gocolly/colly"
 )
 
@@ -182,8 +181,8 @@ func generateOutput(dip Dipartimento, docenti []Docente) string {
 				output += fmt.Sprintf("\n==== %s\n", sottoSezioneTesi.titolo)
 
 				for _, nome := range sottoSezioneTesi.elementi {
-					nome = escape.Markdown(nome)
-					output += fmt.Sprintf("* %s\n", nome)
+
+					output += fmt.Sprintf("* pass:[%s]\n", nome)
 				}
 
 			}

@@ -3,26 +3,26 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"regexp"
 	"strings"
 
 	"github.com/gocolly/colly"
+	"golang.org/x/exp/slices"
 )
 
 const (
-	DIPARTIMENTI_URL  = "https://www.unibo.it/it/ateneo/sedi-e-strutture/dipartimenti"
-	LISTA_DOCENTI_URL = "https://%s.unibo.it/it/dipartimento/persone/docenti-e-ricercatori?pagenumber=1&pagesize=100000000&order=asc&sort=Cognome&"
-	TAB_TESI_SUFFIX   = "/didattica?tab=tesi"
+	dipartimentiUrl         = "https://www.unibo.it/it/ateneo/sedi-e-strutture/dipartimenti"
+	listaDocentiUrlTemplate = "https://%s.unibo.it/it/dipartimento/persone/docenti-e-ricercatori?pagenumber=1&pagesize=100000000&order=asc&sort=Cognome&"
+	tabTesiSuffix           = "/didattica?tab=tesi"
 )
 
 var (
 	help    = flag.Bool("h", false, "Show this help")
-	dirName = flag.String("od", "site", "Output Directory name")
-	dipCode = flag.String("dipcode", "", "Dipartimento code e.g. disi, difa, etc...")
-	quiet   = flag.Bool("q", false, "Quiet mode, non mostrare i log di visita")
+	dirName = flag.String("od", "site", "Output directory name")
+	quiet   = flag.Bool("q", false, "Quiet mode, don't print scraping log")
+	list    = flag.Bool("l", false, "List all the dipartimenti and exit")
 )
 
 type Dipartimento struct {
@@ -31,12 +31,7 @@ type Dipartimento struct {
 	code string
 }
 
-// descrive una sezione di tesi per un singolo professore
-type Sezione[Contenuto any] struct {
-	titolo   string
-	elementi []Contenuto
-}
-
+// Docente descrive un docente con le sue tesi
 type Docente struct {
 	nome  string
 	ruolo string
@@ -44,23 +39,28 @@ type Docente struct {
 	tesi  []Sezione[Sezione[string]]
 }
 
+// Sezione descrive una sezione con un titolo e una lista di elementi di tipo Contenuto
+type Sezione[Contenuto any] struct {
+	titolo   string
+	elementi []Contenuto
+}
+
 func getTesiURL(baseURL string) string {
-	return baseURL + TAB_TESI_SUFFIX
+	return baseURL + tabTesiSuffix
 }
 
 func collyVisit(r *colly.Request) {
 	if !*quiet {
-		log.Println("Visiting", r.URL.String())
+		fmt.Println("Visiting", r.URL.String())
 	}
 }
 
 func collyError(r *colly.Response, err error) {
-	log.Println("Request URL:", r.Request.URL, "failed with response:", r.StatusCode, "\nError:", err)
+	fmt.Fprintln(os.Stderr, "Request URL:", r.Request.URL, "failed with response:", r.StatusCode, "\nError:", err)
 }
 
 func getDipartimenti() []Dipartimento {
 	collector := colly.NewCollector()
-	collector.OnRequest(collyVisit)
 	collector.OnError(collyError)
 	collector.SetRequestTimeout(10e11)
 
@@ -71,7 +71,8 @@ func getDipartimenti() []Dipartimento {
 			re := regexp.MustCompile(`http[s]:\/\/(.*?)\.unibo`)
 			match := re.FindStringSubmatch(linkURL)
 			if len(match) != 2 {
-				log.Fatal("La pagina dei dipartimenti è probabilmente cambiata, non posso proseguire")
+				fmt.Fprintln(os.Stderr, "La pagina dei dipartimenti è probabilmente cambiata, non posso proseguire")
+				os.Exit(1)
 			}
 			dipartimento := Dipartimento{
 				url:  linkURL,
@@ -82,7 +83,7 @@ func getDipartimenti() []Dipartimento {
 		})
 	})
 
-	collector.Visit(DIPARTIMENTI_URL)
+	collector.Visit(dipartimentiUrl)
 
 	return dipartimenti
 }
@@ -138,7 +139,7 @@ func getDocenti(codiceDipartimento string) []Docente {
 	collector.OnRequest(collyVisit)
 	collector.OnError(collyError)
 
-	requestUrl := fmt.Sprintf(LISTA_DOCENTI_URL, codiceDipartimento)
+	requestUrl := fmt.Sprintf(listaDocentiUrlTemplate, codiceDipartimento)
 
 	docenti := make([]Docente, 0, 100)
 	collector.OnHTML("div[class=picture-cards]", func(firstContainer *colly.HTMLElement) {
@@ -150,7 +151,10 @@ func getDocenti(codiceDipartimento string) []Docente {
 			nome := strings.TrimSpace(link.Text())
 			ruolo := infoBlock.Find("p").First().Text()
 			if !exists {
-				log.Fatal("La pagina dei docenti è probabilmente cambiata, non posso prendere trovare il link alla sua pagina")
+				fmt.Fprintln(os.Stderr,
+					"La pagina dei docenti è probabilmente cambiata, "+
+						"non posso prendere trovare il link alla sua pagina")
+				os.Exit(1)
 			}
 
 			docente := Docente{
@@ -168,102 +172,123 @@ func getDocenti(codiceDipartimento string) []Docente {
 	return docenti
 }
 
+var replaceRegexForOutput = regexp.MustCompile(`/\s\s+/gi`)
+
 func generateOutput(dip Dipartimento, docenti []Docente) string {
-	output := fmt.Sprintf("= Tesi %s\n:toc:\n", dip.nome)
+	b := strings.Builder{}
+
+	b.WriteString(fmt.Sprintf("= Tesi %s\n:toc:\n", dip.nome))
 
 	for _, docente := range docenti {
-		output += fmt.Sprintf("\n== %s\n%s | %s[sito web]\n", docente.nome, docente.ruolo, docente.url)
+		b.WriteString(fmt.Sprintf("\n== %s\n%s | %s[sito web]\n", docente.nome, docente.ruolo, docente.url))
 
 		for _, sezioneTesi := range docente.tesi {
-			output += fmt.Sprintf("\n=== %s\n", sezioneTesi.titolo)
+			b.WriteString(fmt.Sprintf("\n=== %s\n", sezioneTesi.titolo))
 
 			for _, sottoSezioneTesi := range sezioneTesi.elementi {
-				output += fmt.Sprintf("\n==== %s\n", sottoSezioneTesi.titolo)
+				b.WriteString(fmt.Sprintf("\n==== %s\n", sottoSezioneTesi.titolo))
 
 				for _, nome := range sottoSezioneTesi.elementi {
-
-					output += fmt.Sprintf("* pass:[%s]\n", nome)
+					b.WriteString(fmt.Sprintf("* pass:[%s]\n", nome))
 				}
-
 			}
 		}
 	}
 
-	output = regexp.MustCompile(`/\s\s+/gi`).ReplaceAllString(output, " ")
+	output := b.String()
+	output = replaceRegexForOutput.ReplaceAllString(output, " ")
 	return output
 }
 
-func saveOutput(dip Dipartimento, output string) string {
+func saveOutput(dip Dipartimento, output string) (string, error) {
 	fileName := fmt.Sprintf("%s.adoc", dip.code)
 	filePath := path.Join(*dirName, fileName)
 
-	os.MkdirAll(*dirName, os.ModePerm)
-
-	file, err := os.Create(filePath)
-	defer file.Close()
+	err := os.MkdirAll(*dirName, os.ModePerm)
 	if err != nil {
-		log.Fatal(err)
+		return "", fmt.Errorf("impossibile creare la directory di output: %s", err)
 	}
 
-	_, err = file.WriteString(output)
+	err = os.WriteFile(filePath, []byte(output), 0666)
 	if err != nil {
-		log.Fatal(err)
+		return "nil", fmt.Errorf("impossibile salvare il file di output: %s", err)
 	}
 
-	return filePath
+	return filePath, nil
 }
 
 func mostraListaDipartimenti(dipartimenti []Dipartimento) {
-	log.Println(
-		"Questa e' la lista dei dipartimenti da cui pui scegliere!\n    Inserire il campo `Codice`!")
+	fmt.Println("Questa e' la lista dei dipartimenti da cui pui scegliere:")
+	fmt.Println()
+
+	longestCodeLen := -1
+	for _, dipartimento := range dipartimenti {
+		if len(dipartimento.code) > longestCodeLen {
+			longestCodeLen = len(dipartimento.code)
+		}
+	}
+
+	fmt.Printf("%-*s | Nome\n", longestCodeLen, "Codice")
+	fmt.Println(strings.Repeat("-", longestCodeLen), "+", strings.Repeat("-", 30))
 
 	for _, dipartimento := range dipartimenti {
-		log.Printf("Codice: %s - Nome: %s\n", dipartimento.code, dipartimento.nome)
+		fmt.Printf("%-*s | %s\n", longestCodeLen, dipartimento.code, dipartimento.nome)
 	}
 }
 
 func scaricaPerDipartimento(dip Dipartimento) {
-	log.Println("Sto scaricando le tesi per il dipartimento", dip.nome)
 	docenti := getDocenti(dip.code)
 
-	log.Println("Sto generando il file output")
+	fmt.Println("Generating output...")
 	output := generateOutput(dip, docenti)
-	filePath := saveOutput(dip, output)
-	log.Println("Ho salvato il file in", filePath)
-}
 
-func test() {
-	dipartimenti := getDipartimenti()
-	for _, dipartimento := range dipartimenti {
-		scaricaPerDipartimento(dipartimento)
+	filePath, err := saveOutput(dip, output)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error: could not save output file:", err)
+		os.Exit(1)
 	}
+
+	fmt.Println("File saved to", filePath)
 }
 
 func main() {
-	flag.Parse()
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [option...] <dep code> [<dep code> ...]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "\nOptions:\n")
+		flag.PrintDefaults()
+	}
 
-	if *help {
-		fmt.Println("Per info sulle sigle guardare qua -> \n\thttps://www.unibo.it/it/ateneo/sedi-e-strutture/dipartimenti")
-		fmt.Println("Guardare il dominio del dipartimento non il codice\n\tEsempio.\n\t\tDIFA -> fisica-astronomia\n\t\tCHIMIND -> chimica-industriale")
-		fmt.Println("Raccolgo tutti i dipartimenti")
+	flag.Parse()
+	args := flag.Args()
+
+	if (*help || len(args) == 0) && !*list {
 		flag.Usage()
 		os.Exit(0)
 	}
 
 	dipartimenti := getDipartimenti()
-
-	index := -1
-	for i, dipartimento := range dipartimenti {
-		if dipartimento.code == *dipCode {
-			index = i
-		}
+	dipSortFunc := func(a, b Dipartimento) int {
+		return strings.Compare(a.code, b.code)
 	}
+	// We sort the slice because we need to binary search and because we need to show the
+	// list of dipartimenti if the user doesn't provide a valid one
+	slices.SortFunc(dipartimenti, dipSortFunc)
 
-	if index == -1 {
-		fmt.Println("Il dipartimento non esiste, immettere codice valido")
+	if *list {
 		mostraListaDipartimenti(dipartimenti)
-		os.Exit(1)
+		os.Exit(0)
 	}
 
-	scaricaPerDipartimento(dipartimenti[index])
+	for i, arg := range args {
+		idxDip, found := slices.BinarySearchFunc(dipartimenti, Dipartimento{code: arg}, dipSortFunc)
+
+		if !found {
+			fmt.Fprintf(os.Stderr, "Error: department \"%s\" not found\n", arg)
+			os.Exit(1)
+		}
+
+		fmt.Printf("(%d/%d) Fetching info for department \"%s\"\n", i+1, len(args), dipartimenti[idxDip].nome)
+
+		scaricaPerDipartimento(dipartimenti[idxDip])
+	}
 }

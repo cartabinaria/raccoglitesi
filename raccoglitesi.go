@@ -22,7 +22,7 @@ var (
 	help    = flag.Bool("h", false, "Show this help")
 	dirName = flag.String("od", "site", "Output directory name")
 	quiet   = flag.Bool("q", false, "Quiet mode, don't print scraping log")
-	list    = flag.Bool("l", false, "List all the dipartimenti and exit")
+	list    = flag.Bool("l", false, "List all the departments and exit")
 )
 
 type Dipartimento struct {
@@ -71,7 +71,8 @@ func getDipartimenti() []Dipartimento {
 			re := regexp.MustCompile(`http[s]:\/\/(.*?)\.unibo`)
 			match := re.FindStringSubmatch(linkURL)
 			if len(match) != 2 {
-				fmt.Fprintln(os.Stderr, "La pagina dei dipartimenti è probabilmente cambiata, non posso proseguire")
+				fmt.Fprintln(os.Stderr,
+					"Error: the page of the departments has probably changed, the regex doesn't match")
 				os.Exit(1)
 			}
 			dipartimento := Dipartimento{
@@ -152,8 +153,7 @@ func getDocenti(codiceDipartimento string) []Docente {
 			ruolo := infoBlock.Find("p").First().Text()
 			if !exists {
 				fmt.Fprintln(os.Stderr,
-					"La pagina dei docenti è probabilmente cambiata, "+
-						"non posso prendere trovare il link alla sua pagina")
+					"Error: the teacher's page has probably changed, the link is not present anymore.")
 				os.Exit(1)
 			}
 
@@ -206,19 +206,19 @@ func saveOutput(dip Dipartimento, output string) (string, error) {
 
 	err := os.MkdirAll(*dirName, os.ModePerm)
 	if err != nil {
-		return "", fmt.Errorf("impossibile creare la directory di output: %s", err)
+		return "", fmt.Errorf("could not create output directory: %w", err)
 	}
 
 	err = os.WriteFile(filePath, []byte(output), 0666)
 	if err != nil {
-		return "nil", fmt.Errorf("impossibile salvare il file di output: %s", err)
+		return "nil", fmt.Errorf("could not write output file: %w", err)
 	}
 
 	return filePath, nil
 }
 
 func mostraListaDipartimenti(dipartimenti []Dipartimento) {
-	fmt.Println("Questa e' la lista dei dipartimenti da cui pui scegliere:")
+	fmt.Println("Departments available:")
 	fmt.Println()
 
 	longestCodeLen := -1
@@ -228,7 +228,7 @@ func mostraListaDipartimenti(dipartimenti []Dipartimento) {
 		}
 	}
 
-	fmt.Printf("%-*s | Nome\n", longestCodeLen, "Codice")
+	fmt.Printf("%-*s | Name\n", longestCodeLen, "Code")
 	fmt.Println(strings.Repeat("-", longestCodeLen), "+", strings.Repeat("-", 30))
 
 	for _, dipartimento := range dipartimenti {
@@ -283,7 +283,7 @@ func main() {
 		idxDip, found := slices.BinarySearchFunc(dipartimenti, Dipartimento{code: arg}, dipSortFunc)
 
 		if !found {
-			fmt.Fprintf(os.Stderr, "Error: department \"%s\" not found\n", arg)
+			fmt.Fprintln(os.Stderr, "Error: department not found:", arg)
 			os.Exit(1)
 		}
 

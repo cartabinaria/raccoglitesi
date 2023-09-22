@@ -21,7 +21,7 @@ const (
 var (
 	help    = flag.Bool("h", false, "Show this help")
 	dirName = flag.String("od", "site", "Output directory name")
-	quiet   = flag.Bool("q", false, "Quiet mode, don't print scraping log")
+	quiet   = flag.Bool("q", false, "Quiet mode (don't print scraping log)")
 	list    = flag.Bool("l", false, "List all the departments and exit")
 )
 
@@ -72,7 +72,7 @@ func getDipartimenti() []Dipartimento {
 			match := re.FindStringSubmatch(linkURL)
 			if len(match) != 2 {
 				fmt.Fprintln(os.Stderr,
-					"Error: the page of the departments has probably changed, the regex doesn't match")
+					"Error: the page of the departments has probably changed. The regex doesn't match")
 				os.Exit(1)
 			}
 			dipartimento := Dipartimento{
@@ -153,7 +153,7 @@ func getDocenti(codiceDipartimento string) []Docente {
 			ruolo := infoBlock.Find("p").First().Text()
 			if !exists {
 				fmt.Fprintln(os.Stderr,
-					"Error: the teacher's page has probably changed, the link is not present anymore.")
+					"Error: the teacher's page has probably changed. The link is not present anymore.")
 				os.Exit(1)
 			}
 

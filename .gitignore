@@ -437,3 +437,6 @@ TSWLatexianTemp*
 # Site
 
 site/
+
+# JetBrains IDEs
+.idea/

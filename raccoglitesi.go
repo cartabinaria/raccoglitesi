@@ -189,7 +189,14 @@ func generateOutput(dip Dipartimento, docenti []Docente) string {
 				b.WriteString(fmt.Sprintf("\n==== %s\n", sottoSezioneTesi.titolo))
 
 				for _, nome := range sottoSezioneTesi.elementi {
-					b.WriteString(fmt.Sprintf("* %s\n", nome))
+					split := strings.Split(nome, "\n")
+
+					b.WriteString(fmt.Sprintf("* %s\n", split[0]))
+
+					for i := 1; i < len(split); i++ {
+						b.WriteString(fmt.Sprintf("+\npass:[%s]\n", split[i]))
+					}
+
 				}
 			}
 		}

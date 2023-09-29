@@ -59,7 +59,7 @@ jobs:
       - run: gem install asciidoctor asciidoctor-pdf
 
       - name: Download site
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: site-source
           path: site
@@ -87,7 +87,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Download site
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: site
           path: site

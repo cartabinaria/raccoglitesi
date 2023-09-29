@@ -4,6 +4,8 @@ go 1.20
 
 require github.com/gocolly/colly v1.2.0
 
+require github.com/csunibo/unibo-go v0.0.5 // indirect
+
 require (
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect

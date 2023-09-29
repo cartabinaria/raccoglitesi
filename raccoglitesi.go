@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/csunibo/unibo-go/department"
 	"github.com/gocolly/colly"
 	"golang.org/x/exp/slices"
 )
@@ -59,34 +60,13 @@ func collyError(r *colly.Response, err error) {
 	fmt.Fprintln(os.Stderr, "Request URL:", r.Request.URL, "failed with response:", r.StatusCode, "\nError:", err)
 }
 
-func getDipartimenti() []Dipartimento {
-	collector := colly.NewCollector()
-	collector.OnError(collyError)
-	collector.SetRequestTimeout(10e11)
-
-	dipartimenti := make([]Dipartimento, 0, 40)
-	collector.OnHTML("div[class=description-text]", func(firstContainer *colly.HTMLElement) {
-		firstContainer.ForEach("a", func(_ int, link *colly.HTMLElement) {
-			linkURL := link.Attr("href")
-			re := regexp.MustCompile(`http[s]:\/\/(.*?)\.unibo`)
-			match := re.FindStringSubmatch(linkURL)
-			if len(match) != 2 {
-				fmt.Fprintln(os.Stderr,
-					"Error: the page of the departments has probably changed. The regex doesn't match")
-				os.Exit(1)
-			}
-			dipartimento := Dipartimento{
-				url:  linkURL,
-				nome: link.Text,
-				code: match[1],
-			}
-			dipartimenti = append(dipartimenti, dipartimento)
-		})
-	})
-
-	collector.Visit(dipartimentiUrl)
-
-	return dipartimenti
+func getDipartimenti() []department.Department {
+	deps, err := department.FetchDepartments()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error: could not fetch departments:", err)
+		os.Exit(1)
+	}
+	return deps
 }
 
 func getTesi(docenteURL string) []Sezione[Sezione[string]] {
@@ -174,10 +154,10 @@ func getDocenti(codiceDipartimento string) []Docente {
 
 var replaceRegexForOutput = regexp.MustCompile(`/\s\s+/gi`)
 
-func generateOutput(dip Dipartimento, docenti []Docente) string {
+func generateOutput(dip department.Department, docenti []Docente) string {
 	b := strings.Builder{}
 
-	b.WriteString(fmt.Sprintf("= Tesi %s\n:toc:\n", dip.nome))
+	b.WriteString(fmt.Sprintf("= Tesi %s\n:toc:\n", dip.Name))
 
 	for _, docente := range docenti {
 		b.WriteString(fmt.Sprintf("\n== %s\n%s | %s[sito web]\n", docente.nome, docente.ruolo, docente.url))
@@ -207,8 +187,8 @@ func generateOutput(dip Dipartimento, docenti []Docente) string {
 	return output
 }
 
-func saveOutput(dip Dipartimento, output string) (string, error) {
-	fileName := fmt.Sprintf("%s.adoc", dip.code)
+func saveOutput(dip department.Department, output string) (string, error) {
+	fileName := fmt.Sprintf("%s.adoc", dip.Code)
 	filePath := path.Join(*dirName, fileName)
 
 	err := os.MkdirAll(*dirName, os.ModePerm)
@@ -224,14 +204,14 @@ func saveOutput(dip Dipartimento, output string) (string, error) {
 	return filePath, nil
 }
 
-func mostraListaDipartimenti(dipartimenti []Dipartimento) {
+func mostraListaDipartimenti(dipartimenti []department.Department) {
 	fmt.Println("Departments available:")
 	fmt.Println()
 
 	longestCodeLen := -1
 	for _, dipartimento := range dipartimenti {
-		if len(dipartimento.code) > longestCodeLen {
-			longestCodeLen = len(dipartimento.code)
+		if len(dipartimento.Code) > longestCodeLen {
+			longestCodeLen = len(dipartimento.Code)
 		}
 	}
 
@@ -239,12 +219,12 @@ func mostraListaDipartimenti(dipartimenti []Dipartimento) {
 	fmt.Println(strings.Repeat("-", longestCodeLen), "+", strings.Repeat("-", 30))
 
 	for _, dipartimento := range dipartimenti {
-		fmt.Printf("%-*s | %s\n", longestCodeLen, dipartimento.code, dipartimento.nome)
+		fmt.Printf("%-*s | %s\n", longestCodeLen, dipartimento.Code, dipartimento.Name)
 	}
 }
 
-func scaricaPerDipartimento(dip Dipartimento) {
-	docenti := getDocenti(dip.code)
+func scaricaPerDipartimento(dip department.Department) {
+	docenti := getDocenti(dip.Code)
 
 	fmt.Println("Generating output...")
 	output := generateOutput(dip, docenti)
@@ -274,11 +254,11 @@ func main() {
 	}
 
 	dipartimenti := getDipartimenti()
-	dipSortFunc := func(a, b Dipartimento) int {
-		return strings.Compare(a.code, b.code)
+	dipSortFunc := func(a, b department.Department) int {
+		return strings.Compare(a.Code, b.Code)
 	}
 	// We sort the slice because we need to binary search and because we need to show the
-	// list of dipartimenti if the user doesn't provide a valid one
+	// list of departments if the user doesn't provide a valid one
 	slices.SortFunc(dipartimenti, dipSortFunc)
 
 	if *list {
@@ -287,14 +267,14 @@ func main() {
 	}
 
 	for i, arg := range args {
-		idxDip, found := slices.BinarySearchFunc(dipartimenti, Dipartimento{code: arg}, dipSortFunc)
+		idxDip, found := slices.BinarySearchFunc(dipartimenti, department.Department{Code: arg}, dipSortFunc)
 
 		if !found {
 			fmt.Fprintln(os.Stderr, "Error: department not found:", arg)
 			os.Exit(1)
 		}
 
-		fmt.Printf("(%d/%d) Fetching info for department \"%s\"\n", i+1, len(args), dipartimenti[idxDip].nome)
+		fmt.Printf("(%d/%d) Fetching info for department \"%s\"\n", i+1, len(args), dipartimenti[idxDip].Name)
 
 		scaricaPerDipartimento(dipartimenti[idxDip])
 	}

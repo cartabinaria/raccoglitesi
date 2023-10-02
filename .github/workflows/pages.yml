@@ -41,7 +41,7 @@ jobs:
       - run: ./raccoglitesi ${{ env.DEPARTMENTS }}
 
       - name: Generate build artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: site-source
           path: site
@@ -71,7 +71,7 @@ jobs:
         run: asciidoctor-pdf "site/*.adoc"
 
       - name: Generate build artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: site
           path: site

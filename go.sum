@@ -10,8 +10,8 @@ github.com/antchfx/xmlquery v1.3.18/go.mod h1:Afkq4JIeXut75taLSuI31ISJ/zeq+3jG7T
 github.com/antchfx/xpath v1.2.3/go.mod h1:i54GszH55fYfBmoZXapTHN8T8tkcHfRgLyVwwqzXNcs=
 github.com/antchfx/xpath v1.2.4 h1:dW1HB/JxKvGtJ9WyVGJ0sIoEcqftV3SqIstujI+B9XY=
 github.com/antchfx/xpath v1.2.4/go.mod h1:i54GszH55fYfBmoZXapTHN8T8tkcHfRgLyVwwqzXNcs=
-github.com/csunibo/unibo-go v0.0.9 h1:bLGzNZFvU/TXB+Depn72bO7F3yJ73EjFbM8E9iRs1kM=
-github.com/csunibo/unibo-go v0.0.9/go.mod h1:h2+xnccHa7x48RNB6d07bpHQ01ozw4oihgDOlvVrJ9U=
+github.com/csunibo/unibo-go v0.0.10 h1:UwFIvTpXMKZCOVoX564RmqQttXTTs5Xz5hCAjun8NFk=
+github.com/csunibo/unibo-go v0.0.10/go.mod h1:h2+xnccHa7x48RNB6d07bpHQ01ozw4oihgDOlvVrJ9U=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/gobwas/glob v0.2.3 h1:A4xDbljILXROh+kObIiy5kIaPYD8e96x1tgBhUI5J+Y=

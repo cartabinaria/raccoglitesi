@@ -1,4 +1,4 @@
 = Raccoglitesi
 
 _Raccoglitesi_ genera un elenco di tutte le tesi proposte o assegnate dai professori di un dato dipartimento.
-Scopri di più sulla https://csunibo.github.io/wiki/web-scraper/raccoglitesi/index.html[wiki di CSUnibo].
+Scopri di più sulla https://cartabinaria.students.cs.unibo.it/wiki/web-scraper/raccoglitesi/[wiki di CSUnibo].

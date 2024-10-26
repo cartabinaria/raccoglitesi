@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/csunibo/unibo-go/department"
+	"github.com/cartabinaria/unibo-go/department"
 	"github.com/gocolly/colly"
 	"golang.org/x/exp/slices"
 )

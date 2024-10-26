@@ -80,7 +80,7 @@ jobs:
     name: Deploy to GitHub Pages
     environment:
       name: github-pages
-      url: https://csunibo.github.io/raccoglitesi/disi.pdf
+      url: https://cartabinaria.github.io/raccoglitesi/disi.pdf
     runs-on: ubuntu-latest
     needs: build
     steps:

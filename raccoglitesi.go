@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2023 Angelo 'Flecart' Huang <xuanqiang.huang@studio.unibo.it>
+// SPDX-FileCopyrightText: 2023 Stefano Volpe <stefano.volpe2@studio.unibo.it>
+// SPDX-FileCopyrightText: 2023 VaiTon <eyadlorenzo@gmail.com>
+// SPDX-FileCopyrightText: 2024 Stefano Volpe <foxy@teapot.ovh>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package main
 
 import (

@@ -6,7 +6,7 @@ toolchain go1.23.2
 
 require github.com/gocolly/colly v1.2.0
 
-require github.com/cartabinaria/unibo-go v0.3.3
+require github.com/cartabinaria/unibo-go v0.4.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.10.0 // indirect

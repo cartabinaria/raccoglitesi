@@ -9,8 +9,8 @@ github.com/antchfx/xmlquery v1.4.2/go.mod h1:QXhvf5ldTuGqhd1SHNvvtlhhdQLks4dD0aw
 github.com/antchfx/xpath v1.3.2/go.mod h1:i54GszH55fYfBmoZXapTHN8T8tkcHfRgLyVwwqzXNcs=
 github.com/antchfx/xpath v1.3.3 h1:tmuPQa1Uye0Ym1Zn65vxPgfltWb/Lxu2jeqIGteJSRs=
 github.com/antchfx/xpath v1.3.3/go.mod h1:i54GszH55fYfBmoZXapTHN8T8tkcHfRgLyVwwqzXNcs=
-github.com/cartabinaria/unibo-go v0.3.3 h1:ML49syni4BqAqURDLEMEFtn3ne7Qn9ZWo09tsu+njAo=
-github.com/cartabinaria/unibo-go v0.3.3/go.mod h1:MteL3rAqgTmk6igszKUDrU5ABTFzneW+arlJ3t/ntko=
+github.com/cartabinaria/unibo-go v0.4.0 h1:LIe4smqrNp2Q7MFQ+CqRINj6jjShFAxgf82+LwZXyJ4=
+github.com/cartabinaria/unibo-go v0.4.0/go.mod h1:MteL3rAqgTmk6igszKUDrU5ABTFzneW+arlJ3t/ntko=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

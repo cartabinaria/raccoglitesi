@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
 
 env:
-  DEPARTMENTS: "disi dei"
+  DEPARTMENTS: "disi dei fisica-astronomia"
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
